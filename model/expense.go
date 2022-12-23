@@ -3,7 +3,7 @@ package model
 type Expenses struct {
 	Id     int64
 	Title  string
-	Amount int
+	Amount float32
 	Note   string
 	Tags   []string
 }

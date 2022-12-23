@@ -68,6 +68,8 @@ func main() {
 		action.PostExpense(e)
 	case "delete":
 		action.DelExpense(1)
+	case "list":
+		action.ListExpense()
 	default:
 		fmt.Println("Default Command")
 	}

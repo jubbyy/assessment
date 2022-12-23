@@ -13,13 +13,13 @@ var DB *sql.DB
 var CREATETABLE = `CREATE TABLE  IF NOT EXISTS expenses (
 	id serial PRIMARY KEY,
 	title VARCHAR ( 140 ) NOT NULL,
-	amount int  NOT NULL,
+	amount float  NOT NULL,
 	note VARCHAR ( 255 ),
     tags VARCHAR (255)
 )`
 var DROP_TABLE = `drop table expenses`
 
-var SELECT = `select * from expenses`
+var SELECT_LIMIT = `select * from expenses limit 10`
 var SELECT_ID = `select * from expenses where id = $1 `
 var DELETE_ID = `delete from expenses where id = $1`
 var UPDATE_ID = `update `
