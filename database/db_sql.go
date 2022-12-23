@@ -48,7 +48,7 @@ func MockData(max int) {
 	}
 	debug.D("Mocking up data ....")
 	//rand.Seed(30)
-	for i := 1; i < max; i++ {
+	for i := 1; i <= max; i++ {
 		cnum = rand.Intn(1000)
 		title = "Title:" + strconv.Itoa(cnum)
 		note = "Notes:" + strconv.Itoa(cnum)

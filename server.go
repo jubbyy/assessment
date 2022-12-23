@@ -50,7 +50,6 @@ func main() {
 	//fmt.Printf("\n%v", rInit)
 	//	fmt.Printf("rPort %v\n", rPort)
 	//	fmt.Printf("rInit %v\n", rInit)
-	action.DelExpense()
 	action.PutExpense()
 
 	connStr := os.Getenv("DATABASE_URL")
@@ -67,6 +66,8 @@ func main() {
 		action.GetExpense(1)
 	case "post":
 		action.PostExpense(e)
+	case "delete":
+		action.DelExpense(1)
 	default:
 		fmt.Println("Default Command")
 	}
