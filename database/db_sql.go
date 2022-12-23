@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"math/rand"
 	"strconv"
+
+	"github.com/jubbyy/assessment/debug"
 )
 
 var DB *sql.DB
@@ -18,18 +20,20 @@ var CREATETABLE = `CREATE TABLE  IF NOT EXISTS expenses (
 var DROP_TABLE = `drop table expenses`
 
 var SELECT = `select * from expenses`
-var SELECT_ID = `select * from expenses where id = ? `
-var DELETE_ID = `delete from expenses where id = ?`
+var SELECT_ID = `select * from expenses where id = $1 `
+var DELETE_ID = `delete from expenses where id = $1`
 var UPDATE_ID = `update `
 var INSERT = `insert into expenses (title,amount,note,tags) values(?,?,?,?)`
 var MOCK_RECORD = `insert into expenses (title,amount,note,tags) values('Test Expenses',501,'Mock Record','tags1,tags2,tags3')`
 
 func ConnectDB(URL string) {
+	debug.D("Openning DB Connection...")
 	db, err := sql.Open("postgres", URL)
 	if err != nil {
 		panic(err.Error())
 	}
-
+	db.Exec(CREATETABLE)
+	debug.D("Database Connected and Table is ready.")
 	DB = db
 }
 func MockData(max int) {
@@ -42,15 +46,15 @@ func MockData(max int) {
 		fmt.Println(err)
 		panic("Prepare Error")
 	}
-
-	rand.Seed(30)
+	debug.D("Mocking up data ....")
+	//rand.Seed(30)
 	for i := 1; i < max; i++ {
 		cnum = rand.Intn(1000)
-		fmt.Println(cnum)
 		title = "Title:" + strconv.Itoa(cnum)
 		note = "Notes:" + strconv.Itoa(cnum)
 		tags = "tag1,tag" + strconv.Itoa(cnum)
 		//		fmt.Println(cnum, title, note, tags)
 		_, _ = st.Exec(title, cnum, note, tags)
 	}
+	debug.D("Mocked up data ready")
 }

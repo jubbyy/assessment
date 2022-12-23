@@ -1,23 +1,31 @@
 package action
 
 import (
-	"log"
+	"fmt"
+	"strings"
 
 	"github.com/jubbyy/assessment/database"
+	"github.com/jubbyy/assessment/debug"
+	"github.com/jubbyy/assessment/model"
 )
 
 func GetExpense(id int64) string {
 	if id == 0 {
-		log.Fatal("error no id to select")
+		debug.D("error no id to select")
 		return "error"
 	}
 	st, err := database.DB.Prepare(database.SELECT_ID)
 	if err != nil {
-		log.Fatal(err)
+		debug.D(err.Error())
 	}
-
-	//    err := stmt.QueryRow(id).Scan(&album.ID, &album.Title, &album.Artist, &album.Price, &album.Quantity)
+	var e model.Expenses
+	var tags string
+	er := st.QueryRow(id).Scan(&e.Id, &e.Title, &e.Amount, &e.Note, &tags)
+	e.Tags = strings.Split(tags, ",")
+	if er != nil {
+		debug.D("Query Error")
+	}
 	defer st.Close()
-	st.Query(id)
+	fmt.Printf("%v", e)
 	return "success"
 }
