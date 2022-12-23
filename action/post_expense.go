@@ -8,7 +8,7 @@ import (
 	"github.com/jubbyy/assessment/model"
 )
 
-func PostExpense(e *model.Expenses) {
+func PostExpense(e model.Expense) {
 	fmt.Printf("%v", e)
 	st, err := database.DB.Prepare(database.INSERT)
 	if err != nil {

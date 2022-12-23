@@ -38,13 +38,7 @@ func setup() {
 }
 
 func main() {
-	e := new(model.Expenses)
-	e.Id = 5
-	e.Title = "Title"
-	e.Amount = 10
-	e.Note = "Note"
-	e.Tags = append(e.Tags, "a", "b")
-	_ = e.Id
+	e := model.Expense{50, "title E", 50.0, "Note E", []string{"Tags A", "Tags E"}}
 
 	setup()
 	//fmt.Printf("\n%v", rInit)

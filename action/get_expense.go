@@ -18,7 +18,7 @@ func GetExpense(id int64) string {
 	if err != nil {
 		debug.D(err.Error())
 	}
-	var e model.Expenses
+	var e model.Expense
 	var tags string
 	er := st.QueryRow(id).Scan(&e.Id, &e.Title, &e.Amount, &e.Note, &tags)
 	e.Tags = strings.Split(tags, ",")
@@ -26,6 +26,6 @@ func GetExpense(id int64) string {
 		debug.D("Query Error")
 	}
 	defer st.Close()
-	fmt.Printf("%v", e)
+	fmt.Println(e.AsJSON())
 	return "success"
 }

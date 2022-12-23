@@ -21,11 +21,11 @@ func ListExpense() {
 	}
 	defer rows.Close()
 
-	var results []model.Expenses
+	var results []model.Expense
 	var id int64
 	var title, note, tags string
 	var amount float32
-	var result model.Expenses
+	var result model.Expense
 
 	for rows.Next() {
 		err := rows.Scan(&id, &title, &amount, &note, &tags)
