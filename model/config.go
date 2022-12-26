@@ -5,4 +5,5 @@ type Configuration struct {
 	Debug  bool
 	Port   string
 	Action string
+	Iface  string
 }

@@ -26,8 +26,30 @@ func (expense Expense) AsJSON() string {
 func (expenses Expenses) AsJSON() string {
 	e, err := json.Marshal(expenses)
 	if err != nil {
-		panic(e)
+		panic(err)
 	}
 	return fmt.Sprintf("%v", string(e))
 
+}
+
+func (expense Expense) FromJSON(rawstring string) Expense {
+	var es Expense
+	err := json.Unmarshal([]byte(rawstring), &es)
+	if err != nil {
+		panic(err)
+	}
+	return es
+}
+
+func NewExpenseFromJSON(jsonstring string) Expense {
+	var es Expense
+	fmt.Printf("%T", jsonstring)
+	fmt.Printf("%T", []byte(jsonstring))
+
+	err := json.Unmarshal([]byte(jsonstring), &es)
+	if err != nil {
+		panic(err)
+	}
+
+	return es
 }

@@ -7,7 +7,7 @@ import (
 var Enabled bool
 
 func D(message string) {
-	Enabled = true
+	Enabled = false
 	if Enabled {
 		log.Println(message)
 	}

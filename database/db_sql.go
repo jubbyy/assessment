@@ -20,9 +20,9 @@ var CREATETABLE = `CREATE TABLE  IF NOT EXISTS expenses (
 var DROP_TABLE = `drop table expenses`
 
 var SELECT_LIMIT = `select * from expenses limit 10`
-var SELECT_ID = `select * from expenses where id = $1 `
+var SELECT_ID = `select id,title,amount,note,tags from expenses where id = $1 `
 var DELETE_ID = `delete from expenses where id = $1`
-var UPDATE_ID = `update `
+var UPDATE_ID = `set title='$2', amount=$3, note = '$4', tags = '$5' where id=$1`
 var INSERT = `insert into expenses (title,amount,note,tags) values(?,?,?,?)`
 var MOCK_RECORD = `insert into expenses (title,amount,note,tags) values('Test Expenses',501,'Mock Record','tags1,tags2,tags3')`
 

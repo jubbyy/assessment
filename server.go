@@ -3,10 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
 
+	"github.com/gin-gonic/gin"
 	"github.com/jubbyy/assessment/action"
 	"github.com/jubbyy/assessment/database"
 	"github.com/jubbyy/assessment/debug"
@@ -26,6 +28,7 @@ func setup() {
 
 	Config.Init = *init
 	Config.Debug = *deb
+	Config.Iface = "localhost"
 	Config.Port = *port
 	Config.Action = strings.ToLower(*action)
 
@@ -37,14 +40,90 @@ func setup() {
 	debug.D(fmt.Sprintf("%v", Config))
 }
 
+func webserver() {
+	router := gin.Default()
+	//	gin.SetMode(gin.ReleaseMode)
+
+	//	router.GET("/someGet", getting)
+	router.GET("/", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "Hello"})
+	})
+
+	router.GET("/expense/:id", func(c *gin.Context) {
+		id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+		if id == 0 {
+			c.JSON(http.StatusNotFound, gin.H{"message": "id 0 not found."})
+			panic("wrong id")
+		}
+		e := action.GetExpense(id)
+		_ = e
+		c.Header("Content-Type", "application/json")
+		c.String(http.StatusOK, e)
+	})
+
+	router.POST("/expense", func(c *gin.Context) {
+		var json model.Expense
+		if err := c.ShouldBindJSON(&json); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		if json.Id == 0 {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "id is 0"})
+			return
+		}
+
+		action.PostExpense(json)
+		c.JSON(http.StatusOK, gin.H{"status": "you are logged in"})
+	})
+
+	router.DELETE("/expense/:id", func(c *gin.Context) {
+		var json model.Expense
+		id := c.Param("id")
+		if err := c.ShouldBindJSON(&json); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		inid, _ := strconv.Atoi(id)
+
+		if inid == 0 {
+			c.JSON(http.StatusNotFound, gin.H{"message": "id 0 not found"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"status": "Deleting"})
+	})
+
+	router.PUT("/expense/:id", func(c *gin.Context) {
+		var json model.Expense
+		id := c.Param("id")
+		inid, _ := strconv.Atoi(id)
+		if err := c.ShouldBindJSON(&json); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+			return
+		}
+
+		if inid == 0 {
+			c.JSON(http.StatusNotFound, gin.H{"message": "id 0 not found"})
+			return
+		}
+
+		action.PostExpense(json)
+		c.JSON(http.StatusOK, gin.H{"status": "you are logged in"})
+	})
+
+	router.Run(Config.Iface + ":" + Config.Port)
+}
+
 func main() {
 	e := model.Expense{50, "title E", 50.0, "Note E", []string{"Tags A", "Tags E"}}
 
 	setup()
+	//webserver()
 	//fmt.Printf("\n%v", rInit)
 	//	fmt.Printf("rPort %v\n", rPort)
 	//	fmt.Printf("rInit %v\n", rInit)
-	action.PutExpense()
+	//	action.PutExpense()
 
 	connStr := os.Getenv("DATABASE_URL")
 	database.ConnectDB(connStr)
@@ -62,8 +141,12 @@ func main() {
 		action.PostExpense(e)
 	case "delete":
 		action.DelExpense(1)
+	case "update":
+		action.PutExpense(`{"title":"Test","notes":"Notes","tags":["tagsss","tags2"],"amount":55.0}`)
 	case "list":
 		action.ListExpense()
+	case "web":
+		webserver()
 	default:
 		fmt.Println("Default Command")
 	}

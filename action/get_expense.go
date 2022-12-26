@@ -1,7 +1,7 @@
 package action
 
 import (
-	"fmt"
+	"log"
 	"strings"
 
 	"github.com/jubbyy/assessment/database"
@@ -21,11 +21,12 @@ func GetExpense(id int64) string {
 	var e model.Expense
 	var tags string
 	er := st.QueryRow(id).Scan(&e.Id, &e.Title, &e.Amount, &e.Note, &tags)
+	log.Printf("%d %f", e.Id, e.Amount)
 	e.Tags = strings.Split(tags, ",")
 	if er != nil {
 		debug.D("Query Error")
 	}
 	defer st.Close()
-	fmt.Println(e.AsJSON())
-	return "success"
+	log.Printf("%s\n", e.AsJSON())
+	return e.AsJSON()
 }
