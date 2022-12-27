@@ -7,17 +7,14 @@ import (
 	"github.com/jubbyy/assessment/model"
 )
 
-func PostExpense(e model.Expense) {
+func PostExpense(e model.Expense) int64 {
 	st, err := database.DB.Prepare(database.INSERT)
-	HasErr(500, err)
+	HasErr(504, err)
 	defer st.Close() // Prepared statements take up server resources and should be closed after use.
 
 	tags := strings.Join(e.Tags, ",")
-	res, err := st.Exec(e.Id, e.Title, e.Amount, e.Note, tags)
+	var newid int64
+	err = st.QueryRow(e.Title, e.Amount, e.Note, tags).Scan(&newid)
 	HasErr(500, err)
-
-	newid, err := res.LastInsertId()
-	HasErr(400, err)
-	e.Id = newid
-
+	return newid
 }

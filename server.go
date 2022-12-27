@@ -68,13 +68,11 @@ func webserver() {
 			return
 		}
 
-		if json.Id == 0 {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "id is 0"})
-			return
-		}
-
-		action.PostExpense(json)
-		c.JSON(http.StatusOK, gin.H{"status": "you are logged in"})
+		res := action.PostExpense(json)
+		json.Id = res
+		c.Header("Content-Type", "application/json")
+		c.String(http.StatusOK, json.AsJSON())
+		//		c.JSON(http.StatusOK, gin.H{"status": "you are logged in"})
 	})
 
 	router.DELETE("/expense/:id", func(c *gin.Context) {
