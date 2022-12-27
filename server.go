@@ -72,42 +72,41 @@ func webserver() {
 		json.Id = res
 		c.Header("Content-Type", "application/json")
 		c.String(http.StatusOK, json.AsJSON())
-		//		c.JSON(http.StatusOK, gin.H{"status": "you are logged in"})
 	})
 
 	router.DELETE("/expense/:id", func(c *gin.Context) {
-		var json model.Expense
 		id := c.Param("id")
-		if err := c.ShouldBindJSON(&json); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
 		inid, _ := strconv.Atoi(id)
 
 		if inid == 0 {
-			c.JSON(http.StatusNotFound, gin.H{"message": "id 0 not found"})
+			c.JSON(http.StatusNotFound, gin.H{"message": id + " not found "})
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{"status": "Deleting"})
+
+		st, err := database.DB.Prepare(database.DELETE_ID)
+		action.HasErr(500, err)
+
+		res, err := st.Exec(id)
+		if numrow, _ := res.RowsAffected(); numrow != 1 {
+			c.JSON(http.StatusNotFound, gin.H{"message": id + "not found"})
+		}
+
+		c.JSON(http.StatusOK, gin.H{"message": id + " was deleted."})
 	})
 
 	router.PUT("/expense/:id", func(c *gin.Context) {
 		var json model.Expense
-		id := c.Param("id")
-		inid, _ := strconv.Atoi(id)
+		id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 		if err := c.ShouldBindJSON(&json); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 			return
 		}
-
-		if inid == 0 {
-			c.JSON(http.StatusNotFound, gin.H{"message": "id 0 not found"})
-			return
+		json.Id = id
+		if action.PutExpense(json) {
+			c.JSON(http.StatusOK, gin.H{"message": "record id : " + c.Param("id") + " was updated"})
+		} else {
+			c.JSON(http.StatusNotFound, gin.H{"message": c.Param("id") + " not FOUND"})
 		}
-
-		action.PostExpense(json)
-		c.JSON(http.StatusOK, gin.H{"status": "you are logged in"})
 	})
 
 	router.Run(Config.Iface + ":" + Config.Port)
@@ -139,8 +138,8 @@ func main() {
 		action.PostExpense(e)
 	case "delete":
 		action.DelExpense(1)
-	case "update":
-		action.PutExpense(`{"title":"Test","notes":"Notes","tags":["tagsss","tags2"],"amount":55.0}`)
+		//	case "update":
+		//		action.PutExpense(`{"title":"Test","notes":"Notes","tags":["tagsss","tags2"],"amount":55.0}`)
 	case "list":
 		action.ListExpense()
 	case "web":

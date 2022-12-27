@@ -1,29 +1,23 @@
 package action
 
 import (
+	"log"
 	"strings"
 
 	"github.com/jubbyy/assessment/database"
+	"github.com/jubbyy/assessment/debug"
 	"github.com/jubbyy/assessment/model"
 )
 
-func PutExpense(jsonstring string) {
-	e := model.NewExpenseFromJSON(jsonstring)
-	//	var e model.Expense
+func PutExpense(e model.Expense) bool {
 	if e.Id == 0 {
-		HasErr(400, "error")
+		debug.D("ID 0 is not allow - " + e.AsJSON())
+		return false
 	}
-
-	st, err := database.DB.Prepare(database.UPDATE_ID)
-	HasErr(500, err)
-	defer st.Close()
-
+	log.Println(e.AsJSON())
 	tags := strings.Join(e.Tags, ",")
-	res, err := st.Exec(e.Id, e.Title, e.Amount, e.Note, tags)
+	_, err := database.PutStmt.Exec(e.Id, e.Title, e.Amount, e.Note, tags)
 	HasErr(500, err)
-
-	newid, err := res.LastInsertId()
-	HasErr(500, err)
-	e.Id = newid
+	return true
 
 }
