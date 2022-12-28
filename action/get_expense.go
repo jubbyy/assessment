@@ -1,27 +1,25 @@
 package action
 
 import (
+	"net/http"
+	"strconv"
 	"strings"
 
+	"github.com/gin-gonic/gin"
 	"github.com/jubbyy/assessment/database"
-	"github.com/jubbyy/assessment/debug"
 	"github.com/jubbyy/assessment/model"
 )
 
-func GetExpense(id int64) string {
-	if id == 0 {
-		debug.D("error no id to select")
-		return "error / id is 0"
-	}
+func GetExpense(c *gin.Context) {
+	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 
 	var e model.Expense
 	var tags string
 	err := database.GetStmt.QueryRow(id).Scan(&e.Id, &e.Title, &e.Amount, &e.Note, &tags)
-	e.Tags = strings.Split(tags, ",")
 	if err != nil {
-		debug.D("Query Error")
-		return "error / Query Error"
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "ID ( " + strconv.FormatInt(id, 10) + " ) not found. "})
+		return
 	}
-	debug.D(e.AsJSON())
-	return e.AsJSON()
+	e.Tags = strings.Split(tags, ",")
+	c.IndentedJSON(http.StatusOK, e)
 }

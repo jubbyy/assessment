@@ -1,21 +1,17 @@
 package action
 
 import (
-	"fmt"
+	"net/http"
 	"strings"
 
+	"github.com/gin-gonic/gin"
 	"github.com/jubbyy/assessment/database"
-	"github.com/jubbyy/assessment/debug"
 	"github.com/jubbyy/assessment/model"
 )
 
-func ListExpense() {
-	st, err := database.DB.Prepare(database.SELECT_LIMIT)
-	if err != nil {
-		panic(err)
-	}
+func ListExpense(c *gin.Context) {
 
-	rows, err := st.Query()
+	rows, err := database.ListStmt.Query()
 	if err != nil {
 		panic(err)
 	}
@@ -39,7 +35,6 @@ func ListExpense() {
 		result.Note = note
 		result.Tags = strings.Split(tags, ",")
 		results = append(results, result)
-
 	}
-	debug.D(fmt.Sprintf("%v", results))
+	c.IndentedJSON(http.StatusOK, results)
 }

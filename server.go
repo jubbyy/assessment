@@ -42,59 +42,41 @@ func setup() {
 
 func webserver() {
 	router := gin.Default()
-	//	gin.SetMode(gin.ReleaseMode)
 
-	//	router.GET("/someGet", getting)
 	router.GET("/", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "Hello"})
 	})
 
-	router.GET("/expense/:id", func(c *gin.Context) {
-		id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
-		if id == 0 {
-			c.JSON(http.StatusNotFound, gin.H{"message": "id 0 not found."})
-			panic("wrong id")
-		}
-		e := action.GetExpense(id)
-		_ = e
-		c.Header("Content-Type", "application/json")
-		c.String(http.StatusOK, e)
-	})
+	router.GET("/expenses", action.ListExpense)
 
-	router.POST("/expense", func(c *gin.Context) {
-		var json model.Expense
-		if err := c.ShouldBindJSON(&json); err != nil {
+	router.GET("/expenses/:id", action.GetExpense)
+
+	router.POST("/expenses", func(c *gin.Context) {
+		var e model.Expense
+		if err := c.ShouldBindJSON(&e); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
-		res := action.PostExpense(json)
-		json.Id = res
+		res := action.PostExpense(e)
+		e.Id = res
 		c.Header("Content-Type", "application/json")
-		c.String(http.StatusOK, json.AsJSON())
+		c.String(http.StatusOK, e.AsJSON())
 	})
 
-	router.DELETE("/expense/:id", func(c *gin.Context) {
+	router.DELETE("/expenses/:id", func(c *gin.Context) {
 		id := c.Param("id")
-		inid, _ := strconv.Atoi(id)
-
-		if inid == 0 {
-			c.JSON(http.StatusNotFound, gin.H{"message": id + " not found "})
-			return
-		}
-
-		st, err := database.DB.Prepare(database.DELETE_ID)
-		action.HasErr(500, err)
-
-		res, err := st.Exec(id)
+		nid, _ := strconv.ParseInt(id, 10, 64)
+		res, _ := database.DelStmt.Exec(nid)
 		if numrow, _ := res.RowsAffected(); numrow != 1 {
-			c.JSON(http.StatusNotFound, gin.H{"message": id + "not found"})
+			c.JSON(http.StatusNotFound, gin.H{"message": id + " not found"})
+			return
 		}
 
 		c.JSON(http.StatusOK, gin.H{"message": id + " was deleted."})
 	})
 
-	router.PUT("/expense/:id", func(c *gin.Context) {
+	router.PUT("/expenses/:id", func(c *gin.Context) {
 		var json model.Expense
 		id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 		if err := c.ShouldBindJSON(&json); err != nil {
@@ -132,16 +114,8 @@ func main() {
 	}
 
 	switch Config.Action {
-	case "get":
-		action.GetExpense(1)
 	case "post":
 		action.PostExpense(e)
-	case "delete":
-		action.DelExpense(1)
-		//	case "update":
-		//		action.PutExpense(`{"title":"Test","notes":"Notes","tags":["tagsss","tags2"],"amount":55.0}`)
-	case "list":
-		action.ListExpense()
 	case "web":
 		webserver()
 	default:

@@ -13,32 +13,12 @@ type Expense struct {
 	Tags   []string `json:"tags"`
 }
 
-type Expenses []Expense
-
 func (expense Expense) AsJSON() string {
 	e, err := json.Marshal(expense)
 	if err != nil {
 		panic(e)
 	}
 	return fmt.Sprintf("%v", string(e))
-}
-
-func (expenses Expenses) AsJSON() string {
-	e, err := json.Marshal(expenses)
-	if err != nil {
-		panic(err)
-	}
-	return fmt.Sprintf("%v", string(e))
-
-}
-
-func (expense Expense) FromJSON(rawstring string) Expense {
-	var es Expense
-	err := json.Unmarshal([]byte(rawstring), &es)
-	if err != nil {
-		panic(err)
-	}
-	return es
 }
 
 func NewExpenseFromJSON(jsonstring string) Expense {
