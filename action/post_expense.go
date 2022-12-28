@@ -1,20 +1,26 @@
 package action
 
 import (
+	"net/http"
 	"strings"
 
+	"github.com/gin-gonic/gin"
 	"github.com/jubbyy/assessment/database"
 	"github.com/jubbyy/assessment/model"
 )
 
-func PostExpense(e model.Expense) int64 {
-	st, err := database.DB.Prepare(database.INSERT)
-	HasErr(504, err)
-	defer st.Close() // Prepared statements take up server resources and should be closed after use.
+func PostExpense(c *gin.Context) {
+	var e model.Expense
+	if err := c.ShouldBindJSON(&e); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid format JSON data (action.PostExpense)"})
+	}
 
 	tags := strings.Join(e.Tags, ",")
 	var newid int64
-	err = st.QueryRow(e.Title, e.Amount, e.Note, tags).Scan(&newid)
-	HasErr(500, err)
-	return newid
+	err := database.PostStmt.QueryRow(e.Title, e.Amount, e.Note, tags).Scan(&newid)
+	if err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": "Insertion to database error"})
+	}
+	e.Id = newid
+	c.IndentedJSON(http.StatusOK, e)
 }

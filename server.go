@@ -40,7 +40,7 @@ func setup() {
 	debug.D(fmt.Sprintf("%v", Config))
 }
 
-func webserver() {
+func construct() {
 	router := gin.Default()
 
 	router.GET("/", func(c *gin.Context) {
@@ -51,54 +51,19 @@ func webserver() {
 
 	router.GET("/expenses/:id", action.GetExpense)
 
-	router.POST("/expenses", func(c *gin.Context) {
-		var e model.Expense
-		if err := c.ShouldBindJSON(&e); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
+	router.POST("/expenses", action.PostExpense)
 
-		res := action.PostExpense(e)
-		e.Id = res
-		c.Header("Content-Type", "application/json")
-		c.String(http.StatusOK, e.AsJSON())
-	})
+	router.DELETE("/expenses/:id", action.DelExpense)
 
-	router.DELETE("/expenses/:id", func(c *gin.Context) {
-		id := c.Param("id")
-		nid, _ := strconv.ParseInt(id, 10, 64)
-		res, _ := database.DelStmt.Exec(nid)
-		if numrow, _ := res.RowsAffected(); numrow != 1 {
-			c.JSON(http.StatusNotFound, gin.H{"message": id + " not found"})
-			return
-		}
-
-		c.JSON(http.StatusOK, gin.H{"message": id + " was deleted."})
-	})
-
-	router.PUT("/expenses/:id", func(c *gin.Context) {
-		var json model.Expense
-		id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
-		if err := c.ShouldBindJSON(&json); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
-			return
-		}
-		json.Id = id
-		if action.PutExpense(json) {
-			c.JSON(http.StatusOK, gin.H{"message": "record id : " + c.Param("id") + " was updated"})
-		} else {
-			c.JSON(http.StatusNotFound, gin.H{"message": c.Param("id") + " not FOUND"})
-		}
-	})
+	router.PUT("/expenses/:id", action.PutExpense)
 
 	router.Run(Config.Iface + ":" + Config.Port)
 }
 
 func main() {
-	e := model.Expense{50, "title E", 50.0, "Note E", []string{"Tags A", "Tags E"}}
 
 	setup()
-	//webserver()
+	//construct()
 	//fmt.Printf("\n%v", rInit)
 	//	fmt.Printf("rPort %v\n", rPort)
 	//	fmt.Printf("rInit %v\n", rInit)
@@ -113,13 +78,8 @@ func main() {
 		database.MockData(10)
 	}
 
-	switch Config.Action {
-	case "post":
-		action.PostExpense(e)
-	case "web":
-		webserver()
-	default:
-		fmt.Println("Default Command")
+	if Config.Action == "web" {
+		construct()
 	}
 
 }
