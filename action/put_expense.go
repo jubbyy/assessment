@@ -29,5 +29,5 @@ func PutExpense(c *gin.Context) {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": "invalid data (action.PutExpense)"})
 		return
 	}
-	c.IndentedJSON(http.StatusOK, gin.H{"message": "expense id : " + c.Param("id") + " : updated"})
+	c.JSON(http.StatusOK, e)
 }

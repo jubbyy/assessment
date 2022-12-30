@@ -67,3 +67,22 @@ func TestStoryExp02(t *testing.T) {
 	assert.Equal(t, expectResponse, string(responseData))
 	assert.Equal(t, http.StatusOK, w.Code)
 }
+
+func TestStoryExp03(t *testing.T) {
+
+	jsonRequest := `{
+		"title": "apple smoothie",
+		"amount": 89,
+		"note": "no discount", 
+		"tags": ["beverage"]
+	}`
+	expectResponse := `{"id":1,"title":"apple smoothie","amount":89,"note":"no discount","tags":["beverage"]}`
+
+	req, _ := http.NewRequest("PUT", "/expenses/1", bytes.NewBuffer([]byte(jsonRequest)))
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	responseData, _ := ioutil.ReadAll(w.Body)
+	assert.Equal(t, expectResponse, string(responseData))
+	assert.Equal(t, http.StatusOK, w.Code)
+}
