@@ -13,6 +13,7 @@ func PostExpense(c *gin.Context) {
 	var e model.Expense
 	if err := c.ShouldBindJSON(&e); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid format JSON data (action.PostExpense)"})
+		return
 	}
 
 	tags := strings.Join(e.Tags, ",")
@@ -20,7 +21,8 @@ func PostExpense(c *gin.Context) {
 	err := database.PostStmt.QueryRow(e.Title, e.Amount, e.Note, tags).Scan(&newid)
 	if err != nil {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": "Insertion to database error"})
+		return
 	}
 	e.Id = newid
-	c.IndentedJSON(http.StatusOK, e)
+	c.JSON(http.StatusOK, e)
 }

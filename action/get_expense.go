@@ -17,9 +17,9 @@ func GetExpense(c *gin.Context) {
 	var tags string
 	err := database.GetStmt.QueryRow(id).Scan(&e.Id, &e.Title, &e.Amount, &e.Note, &tags)
 	if err != nil {
-		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "ID ( " + strconv.FormatInt(id, 10) + " ) not found. "})
+		c.JSON(http.StatusNotFound, gin.H{"message": "ID ( " + strconv.FormatInt(id, 10) + " ) not found. "})
 		return
 	}
 	e.Tags = strings.Split(tags, ",")
-	c.IndentedJSON(http.StatusOK, e)
+	c.JSON(http.StatusOK, e)
 }

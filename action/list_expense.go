@@ -26,7 +26,8 @@ func ListExpense(c *gin.Context) {
 	for rows.Next() {
 		err := rows.Scan(&id, &title, &amount, &note, &tags)
 		if err != nil {
-			panic(err)
+			c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": "invalid rows data"})
+			return
 		}
 
 		result.Id = id

@@ -4,11 +4,13 @@ import (
 	"database/sql"
 	"fmt"
 	"math/rand"
+	"os"
 	"strconv"
 
 	"github.com/jubbyy/assessment/debug"
 )
 
+var mockResponse = `{"id":1,"title":"Title1","amount":1111.11,"notes":"notes1","tags":["tags1","tags2"]}`
 var DB *sql.DB
 var CREATETABLE = `CREATE TABLE  IF NOT EXISTS expenses (
 	id serial PRIMARY KEY,
@@ -19,20 +21,24 @@ var CREATETABLE = `CREATE TABLE  IF NOT EXISTS expenses (
 )`
 
 var (
-	DROP_TABLE  = `drop table expenses`
-	SELECT      = `select * from expenses`
-	SELECT_ID   = `select id,title,amount,note,tags from expenses where id = $1 `
-	DELETE_ID   = `delete from expenses where id = $1`
-	UPDATE_ID   = `update expenses set title=$2, amount=$3, note = $4, tags = $5 where id=$1`
-	INSERT      = `insert into expenses (title,amount,note,tags) values($1,$2,$3,$4) RETURNING id`
-	MOCK_RECORD = `insert into expenses (title,amount,note,tags) values('Test Expenses',501,'Mock Record','tags1,tags2,tags3')`
+	DROP_TABLE   = `drop table expenses`
+	SELECT       = `select * from expenses`
+	SELECT_ID    = `select id,title,amount,note,tags from expenses where id = $1`
+	DELETE_ID    = `delete from expenses where id = $1`
+	UPDATE_ID    = `update expenses set title=$2, amount=$3, note = $4, tags = $5 where id=$1`
+	INSERT       = `insert into expenses (title,amount,note,tags) values($1,$2,$3,$4) RETURNING id`
+	TEST_RECORD1 = `insert into expenses (title,amount,note,tags) values('Title1',1111.11,'Note1','tags1,tags2')`
+	TEST_RECORD2 = `insert into expenses (title,amount,note,tags) values('Title2',2222.22,'Note2','tags2,tags3')`
+	TEST_RECORD3 = `insert into expenses (title,amount,note,tags) values('Title3',3333.33,'Note3','tags1,tags3')`
 )
 
 var (
 	GetStmt, DelStmt, PostStmt, PutStmt, ListStmt *sql.Stmt
 )
 
-func ConnectDB(URL string) {
+func ConnectDB() {
+	URL := os.Getenv("DATABASE_URL")
+
 	debug.D("Openning DB Connection...")
 	db, err := sql.Open("postgres", URL)
 	if err != nil {
@@ -47,8 +53,16 @@ func ConnectDB(URL string) {
 	ListStmt, err = db.Prepare(SELECT)
 
 	DB = db
-
 }
+
+func MockDataNew() {
+	DB.Exec(DROP_TABLE)
+	DB.Exec(CREATETABLE)
+	DB.Exec(TEST_RECORD1)
+	DB.Exec(TEST_RECORD2)
+	DB.Exec(TEST_RECORD3)
+}
+
 func MockData(max int) {
 	var cnum int
 	var title, note, tags string
