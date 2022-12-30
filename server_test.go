@@ -67,3 +67,38 @@ func TestStoryExp02(t *testing.T) {
 	assert.Equal(t, expectResponse, string(responseData))
 	assert.Equal(t, http.StatusOK, w.Code)
 }
+
+func TestDropDB(t *testing.T) {
+	database.DB.Exec(database.DROP_TABLE)
+	database.DB.Exec(database.CREATETABLE)
+}
+func TestStoryExp04(t *testing.T) {
+	jsonR1 := `{
+		"title": "apple smoothie",
+		"amount": 89,
+		"note": "no discount",
+		"tags": ["beverage"]
+	}`
+	jsonR2 := `{
+		"title": "iPhone 14 Pro Max 1TB",
+		"amount": 66900,
+		"note": "birthday gift from my love", 
+		"tags": ["gadget"]
+	}`
+	expectResponse := `[{"id":1,"title":"apple smoothie","amount":89,"note":"no discount","tags":["beverage"]},{"id":2,"title":"iPhone 14 Pro Max 1TB","amount":66900,"note":"birthday gift from my love","tags":["gadget"]}]`
+
+	req, _ := http.NewRequest("POST", "/expenses", bytes.NewBuffer([]byte(jsonR1)))
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	req, _ = http.NewRequest("POST", "/expenses", bytes.NewBuffer([]byte(jsonR2)))
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	req, _ = http.NewRequest("GET", "/expenses", nil)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	responseData, _ := ioutil.ReadAll(w.Body)
+	assert.Equal(t, expectResponse, string(responseData))
+	assert.Equal(t, http.StatusOK, w.Code)
+}

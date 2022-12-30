@@ -37,5 +37,5 @@ func ListExpense(c *gin.Context) {
 		result.Tags = strings.Split(tags, ",")
 		results = append(results, result)
 	}
-	c.IndentedJSON(http.StatusOK, results)
+	c.JSON(http.StatusOK, results)
 }
