@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"math/rand"
-	"os"
 	"strconv"
 
 	"github.com/jubbyy/assessment/debug"
@@ -12,17 +11,25 @@ import (
 
 var mockResponse = `{"id":1,"title":"Title1","amount":1111.11,"notes":"notes1","tags":["tags1","tags2"]}`
 var DB *sql.DB
-var CREATETABLE = `CREATE TABLE  IF NOT EXISTS expenses (
-	id serial PRIMARY KEY,
-	title VARCHAR ( 140 ) NOT NULL,
-	amount float  NOT NULL,
-	note VARCHAR ( 255 ),
-    tags VARCHAR (255)
-)`
 
 var (
+	CREATETABLE = `CREATE TABLE  IF NOT EXISTS expenses (
+		id serial PRIMARY KEY,
+		title VARCHAR ( 140 ) NOT NULL,
+		amount float  NOT NULL,
+		note VARCHAR ( 255 ),
+		tags VARCHAR (255)
+	)`
+
+	CREATE_TABLE = `	CREATE TABLE IF NOT EXISTS expenses (
+		id SERIAL PRIMARY KEY,
+		title TEXT,
+		amount FLOAT,
+		note TEXT,
+		tags TEXT[]
+	);`
 	DROP_TABLE   = `drop table expenses`
-	SELECT       = `select * from expenses`
+	SELECT       = `select * from expenses order by id`
 	SELECT_ID    = `select id,title,amount,note,tags from expenses where id = $1`
 	DELETE_ID    = `delete from expenses where id = $1`
 	UPDATE_ID    = `update expenses set title=$2, amount=$3, note = $4, tags = $5 where id=$1`
@@ -36,8 +43,7 @@ var (
 	GetStmt, DelStmt, PostStmt, PutStmt, ListStmt *sql.Stmt
 )
 
-func ConnectDB() {
-	URL := os.Getenv("DATABASE_URL")
+func ConnectDB(URL string) {
 
 	debug.D("Openning DB Connection...")
 	db, err := sql.Open("postgres", URL)
