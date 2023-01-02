@@ -1,0 +1,30 @@
+# Use postgres/example user/password credentials
+version: '3.8'
+services:
+
+  db:
+    image: postgres
+    restart: always
+    volumes:
+      - ./database/0-initdb.sh:/docker-entrypoint-initdb.d/0-initdb.sh
+      - ./database/99-initdb.sql:/docker-entrypoint-initdb.d/99-initdb.sql
+        #      - ./initdb.sh:/usr/local/bin/docker-entrypoint.sh/99-initdb.sh
+    environment:
+       POSTGRES_PASSWORD: ${POSTGRES_CNT_PASSWORD}
+       DBNAME: ${DBNAME}
+       DBTABLE: ${DBTABLE}
+       DBUSER: ${DBUSER}
+       DBPASS: ${DBPASS}
+    ports:
+      - 5432:5432
+
+  adminer:
+    image: adminer
+    restart: always
+    depends_on:
+      - db
+    ports:
+      - 8088:8080
+  
+        #  gobuild:
+        #    image: golang:1.19
