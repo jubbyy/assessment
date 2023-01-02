@@ -2,11 +2,11 @@ package action
 
 import (
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jubbyy/assessment/database"
 	"github.com/jubbyy/assessment/model"
+	"github.com/lib/pq"
 )
 
 func PostExpense(c *gin.Context) {
@@ -16,13 +16,11 @@ func PostExpense(c *gin.Context) {
 		return
 	}
 
-	tags := strings.Join(e.Tags, ",")
-	var newid int64
-	err := database.PostStmt.QueryRow(e.Title, e.Amount, e.Note, tags).Scan(&newid)
+	//	tags := strings.Join(e.Tags, ",")
+	err := database.PostStmt.QueryRow(e.Title, e.Amount, e.Note, pq.Array(&e.Tags)).Scan(&e.Id)
 	if err != nil {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": "Insertion to database error"})
 		return
 	}
-	e.Id = newid
 	c.JSON(http.StatusOK, e)
 }

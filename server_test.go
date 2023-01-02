@@ -26,13 +26,13 @@ func TestConnectDB(t *testing.T) {
 	} else {
 		t.Log("Connecting to Database .... TESTDATBASE_URL ")
 	}
+	t.Log("Connecting to : " + URL)
 	database.ConnectDB(URL)
+	t.Log(database.DB.Stats())
+
 	t.Log("Droping Table and Create a new one")
 	database.DB.Exec(database.DROP_TABLE)
-	database.DB.Exec(database.CREATETABLE)
-	//database.DB.Exec(database.TEST_RECORD1)
-	//database.DB.Exec(database.TEST_RECORD2)
-	//database.DB.Exec(database.TEST_RECORD3)
+	database.DB.Exec(database.CREATE_TABLE)
 }
 
 func TestStartGinWebServer(t *testing.T) {
@@ -119,7 +119,7 @@ func TestStoryExp04(t *testing.T) {
 
 	t.Log("Dropping old Data before starting testing Exp04")
 	database.DB.Exec(database.DROP_TABLE)
-	database.DB.Exec(database.CREATETABLE)
+	database.DB.Exec(database.CREATE_TABLE)
 
 	w := httptest.NewRecorder()
 	wt := httptest.NewRecorder()

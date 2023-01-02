@@ -23,6 +23,8 @@ func StartAndRoute(releasemode bool) *gin.Engine {
 	router.GET("/ping", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "KBTG Pong"})
 	})
+	router.GET("/exp", action.ListExpense)
+	router.GET("/exp/:id", action.GetExpense)
 
 	authen := router.Group("/", gin.BasicAuth(Ginusers))
 	authen.GET("/expenses", action.ListExpense)

@@ -7,4 +7,5 @@ type Configuration struct {
 	Action     string
 	Iface      string
 	VerboseLog bool
+	Mock       bool
 }
