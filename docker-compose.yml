@@ -10,13 +10,13 @@ services:
       - ./database/99-initdb.sql:/docker-entrypoint-initdb.d/99-initdb.sql
         #      - ./initdb.sh:/usr/local/bin/docker-entrypoint.sh/99-initdb.sh
     environment:
-       POSTGRES_PASSWORD: ${POSTGRES_CNT_PASSWORD}
-       DBNAME: ${DBNAME}
-       DBTABLE: ${DBTABLE}
-       DBUSER: ${DBUSER}
-       DBPASS: ${DBPASS}
-         #    ports:
-         #  - 5432:5432
+      POSTGRES_PASSWORD: ${POSTGRES_CNT_PASSWORD}
+      DBNAME: ${DBNAME}
+      DBTABLE: ${DBTABLE}
+      DBUSER: ${DBUSER}
+      DBPASS: ${DBPASS}
+        #    ports:
+        #  - 5432:5432
 
   adminer:
     image: adminer
@@ -34,7 +34,8 @@ services:
     working_dir: ${OUTPATH}
     environment:
       GOOS: linux
-    entrypoint: sh -c "rm ${OUTNAME};go build -o ${OUTNAME}"
+      GOARCH: amd64
+    entrypoint: sh -c "rm ${OUTNAME};go build -o ${OUTNAME};chmod +x ${OUTNAME}"
 
   gorun:
     image: amd64/alpine
