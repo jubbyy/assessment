@@ -105,7 +105,7 @@ func TestStoryExp02NotFound(t *testing.T) {
 func TestStoryExp03(t *testing.T) {
 	jsonRequest := `{
 		"title": "apple smoothie",
-		"amount": 69,
+		"amount": 89,
 		"note": "no discount", 
 		"tags": ["beverage"]
 	}`
@@ -120,6 +120,22 @@ func TestStoryExp03(t *testing.T) {
 	assert.Equal(t, expectResponse, string(responseData))
 	assert.Equal(t, http.StatusOK, w.Code)
 }
+func TestStoryExp03NotFound(t *testing.T) {
+	jsonRequest := `{
+		"title": "apple smoothie",
+		"amount": 89,
+		"note": "no discount", 
+		"tags": ["beverage"]
+	}`
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest("PUT", "/expenses/1000", bytes.NewBuffer([]byte(jsonRequest)))
+	req.SetBasicAuth(myusers.Good.Name, myusers.Good.Password)
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+}
+
 func TestStoryExp04(t *testing.T) {
 	jsonR1 := `{
 		"title": "apple smoothie",

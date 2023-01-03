@@ -17,16 +17,25 @@ func PutExpense(c *gin.Context) {
 		return
 	}
 
-	e.Id, _ = strconv.Atoi(c.Param("id"))
-	res, err := database.PutStmt.Exec(e.Id, e.Title, e.Amount, e.Note, pq.Array(&e.Tags))
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		id = 0
+	}
+
+	res, err := database.PutStmt.Exec(id, e.Title, e.Amount, e.Note, pq.Array(&e.Tags))
+
 	rows, _ := res.RowsAffected()
 	if rows == 0 {
-		c.IndentedJSON(http.StatusNotFound, gin.H{"message": c.Param("id") + " (id) not found."})
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "id : " + c.Param("id") + " not found."})
 		return
 	}
+
 	if err != nil {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": "invalid data (action.PutExpense)"})
 		return
 	}
+
+	e.Id = id
 	c.JSON(http.StatusOK, e)
+
 }
