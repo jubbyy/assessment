@@ -30,23 +30,23 @@ services:
     image: golang:1.19-alpine
     restart: "no"
     volumes:
-      - ./:/goe
-    working_dir: /goe
+      - ./:${OUTPATH}
+    working_dir: ${OUTPATH}
     environment:
       GOOS: linux
-    entrypoint: sh -c "rm ${OUTFILE};go build -o ${OUTFILE} server.go"
+    entrypoint: sh -c "rm ${OUTNAME};go build -o ${OUTNAME}"
 
   gorun:
-    image: gcr.io/distroless/static-debian11
+    image: amd64/alpine
     restart: always
     depends_on:
       - gobuilder
     environment:
       PORT: ${PORT}
       DATABASE_URL: postgres://${DBUSER}:${DBPASS}@db:5432/${DBNAME}
+    working_dir: ${OUTPATH}
     ports:
       - ${PORT}:${PORT}
     volumes:
-      - ./server.out:${OUTFILE}
-    entrypoint:
-      - sh -c 'while [ ! -f ${OUTFILE} ]; do sleep 2; done; ${OUTFILE} --action=web'
+      - ./:${OUTPATH}
+    entrypoint: /bin/sh -c "while [ ! -f ${OUTNAME} ]; do sleep 2; done;./${OUTNAME} --action=web --debugmode"

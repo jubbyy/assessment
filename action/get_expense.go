@@ -37,12 +37,13 @@ func GetExpense(c *gin.Context) {
 	if er != nil {
 		id = 0
 	}
-
 	err := database.TGetStmt.QueryRow(id).Scan(&e.Title, &e.Amount, &e.Note, pq.Array(&e.Tags))
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, err.Error())
+		c.JSON(http.StatusNotFound, gin.H{"message": "expense id : " + c.Param("id") + " not Found"})
+		return
 	}
+	e.Id = id
 
 	c.JSON(http.StatusOK, e)
 }

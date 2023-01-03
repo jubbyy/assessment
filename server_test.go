@@ -27,12 +27,22 @@ func TestConnectDB(t *testing.T) {
 		t.Log("Connecting to Database .... TESTDATBASE_URL ")
 	}
 	t.Log("Connecting to : " + URL)
-	database.ConnectDB(URL)
-	t.Log(database.DB.Stats())
+	DB = database.ConnectDB(URL)
 
 	t.Log("Droping Table and Create a new one")
-	database.DB.Exec(database.DROP_TABLE)
-	database.DB.Exec(database.CREATE_TABLE)
+	res, err := DB.Exec(database.DROP_TABLE)
+	_ = res
+	if err != nil {
+		t.Log("Can't Drop Table")
+		t.Log(err.Error())
+	}
+	res, err = DB.Exec(database.CREATE_TABLE)
+	_ = res
+	if err != nil {
+		t.Log("Can't Create Table")
+		t.Log(err.Error())
+	}
+
 }
 
 func TestStartGinWebServer(t *testing.T) {
@@ -84,10 +94,18 @@ func TestStoryExp02(t *testing.T) {
 	assert.Equal(t, expectResponse, string(responseData))
 	assert.Equal(t, http.StatusOK, w.Code)
 }
+func TestStoryExp02NotFound(t *testing.T) {
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/expenses/1000", nil)
+	req.SetBasicAuth(myusers.Good.Name, myusers.Good.Password)
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+}
 func TestStoryExp03(t *testing.T) {
 	jsonRequest := `{
 		"title": "apple smoothie",
-		"amount": 89,
+		"amount": 69,
 		"note": "no discount", 
 		"tags": ["beverage"]
 	}`
@@ -118,8 +136,8 @@ func TestStoryExp04(t *testing.T) {
 	expectResponse := `[{"id":1,"title":"apple smoothie","amount":89,"note":"no discount","tags":["beverage"]},{"id":2,"title":"iPhone 14 Pro Max 1TB","amount":66900,"note":"birthday gift from my love","tags":["gadget"]}]`
 
 	t.Log("Dropping old Data before starting testing Exp04")
-	database.DB.Exec(database.DROP_TABLE)
-	database.DB.Exec(database.CREATE_TABLE)
+	DB.Exec(database.DROP_TABLE)
+	DB.Exec(database.CREATE_TABLE)
 
 	w := httptest.NewRecorder()
 	wt := httptest.NewRecorder()
