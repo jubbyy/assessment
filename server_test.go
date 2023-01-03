@@ -64,6 +64,8 @@ func TestPing(t *testing.T) {
 }
 
 func TestStoryExp01(t *testing.T) {
+	t.Log("Test Case : Story01 Create an Expense")
+
 	jsonRequest := `{
 		"title": "strawberry smoothie",
 		"amount": 79,
@@ -71,8 +73,8 @@ func TestStoryExp01(t *testing.T) {
 		"tags": ["food", "beverage"]
 	}`
 	expectResponse := `{"id":1,"title":"strawberry smoothie","amount":79,"note":"night market promotion discount 10 bath","tags":["food","beverage"]}`
-	w := httptest.NewRecorder()
 
+	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/expenses", bytes.NewBuffer([]byte(jsonRequest)))
 	req.SetBasicAuth(myusers.Good.Name, myusers.Good.Password)
 	r.ServeHTTP(w, req)
@@ -83,9 +85,11 @@ func TestStoryExp01(t *testing.T) {
 }
 
 func TestStoryExp02(t *testing.T) {
-	expectResponse := `{"id":1,"title":"strawberry smoothie","amount":79,"note":"night market promotion discount 10 bath","tags":["food","beverage"]}`
-	w := httptest.NewRecorder()
+	t.Log("Test Case : Story02 Get an Expense with ID")
 
+	expectResponse := `{"id":1,"title":"strawberry smoothie","amount":79,"note":"night market promotion discount 10 bath","tags":["food","beverage"]}`
+
+	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/expenses/1", nil)
 	req.SetBasicAuth(myusers.Good.Name, myusers.Good.Password)
 	r.ServeHTTP(w, req)
@@ -95,17 +99,19 @@ func TestStoryExp02(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 }
 func TestStoryExp02NotFound(t *testing.T) {
+	t.Log("Test Case : Story02 Expense Not Found")
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/expenses/1000", nil)
+	req, _ := http.NewRequest("GET", "/expenses/0", nil)
 	req.SetBasicAuth(myusers.Good.Name, myusers.Good.Password)
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusNotFound, w.Code)
 }
 func TestStoryExp03(t *testing.T) {
+	t.Log("Test Case : Story03 Update an Expense")
 	jsonRequest := `{
 		"title": "apple smoothie",
-		"amount": 69,
+		"amount": 89,
 		"note": "no discount", 
 		"tags": ["beverage"]
 	}`
@@ -120,7 +126,25 @@ func TestStoryExp03(t *testing.T) {
 	assert.Equal(t, expectResponse, string(responseData))
 	assert.Equal(t, http.StatusOK, w.Code)
 }
+
+func TestStoryExp03NotFound(t *testing.T) {
+	t.Log("Test Case : Story03 expense not found")
+	jsonRequest := `{
+		"title": "apple smoothie",
+		"amount": 89,
+		"note": "no discount", 
+		"tags": ["beverage"]
+	}`
+	w := httptest.NewRecorder()
+
+	req, _ := http.NewRequest("PUT", "/expenses/0", bytes.NewBuffer([]byte(jsonRequest)))
+	req.SetBasicAuth(myusers.Good.Name, myusers.Good.Password)
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+}
 func TestStoryExp04(t *testing.T) {
+	t.Log("Test Case : Story04 List Expenses")
 	jsonR1 := `{
 		"title": "apple smoothie",
 		"amount": 89,
@@ -135,7 +159,7 @@ func TestStoryExp04(t *testing.T) {
 	}`
 	expectResponse := `[{"id":1,"title":"apple smoothie","amount":89,"note":"no discount","tags":["beverage"]},{"id":2,"title":"iPhone 14 Pro Max 1TB","amount":66900,"note":"birthday gift from my love","tags":["gadget"]}]`
 
-	t.Log("Dropping old Data before starting testing Exp04")
+	t.Log("Refresh Table for testing Exp04")
 	DB.Exec(database.DROP_TABLE)
 	DB.Exec(database.CREATE_TABLE)
 
@@ -158,9 +182,21 @@ func TestStoryExp04(t *testing.T) {
 	assert.Equal(t, expectResponse, string(responseData))
 	assert.Equal(t, http.StatusOK, w.Code)
 }
+func TestStoryExp04NotFound(t *testing.T) {
+	t.Log("Test Case : Story04 zero data")
+	t.Log("Dropping Data for testing Exp04 NotFound")
+	DB.Exec(database.DROP_TABLE)
+	DB.Exec(database.CREATE_TABLE)
 
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/expenses", nil)
+	req.SetBasicAuth(myusers.Good.Name, myusers.Good.Password)
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+}
 func TestBadAuthentication(t *testing.T) {
-	t.Log("Testing bad username")
+	t.Log("Test Case : Bad username")
 	w := httptest.NewRecorder()
 
 	req, _ := http.NewRequest("GET", "/expenses", nil)
