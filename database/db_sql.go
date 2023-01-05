@@ -9,8 +9,6 @@ import (
 	"github.com/lib/pq"
 )
 
-var mockResponse = `{"id":1,"title":"Title1","amount":1111.11,"notes":"notes1","tags":["tags1","tags2"]}`
-
 var (
 	CREATE_TABLE = `CREATE TABLE IF NOT EXISTS expenses (
 		id SERIAL PRIMARY KEY,
@@ -27,6 +25,11 @@ var (
 	UPDATE_ID  = `update expenses set title=$2, amount=$3, note = $4, tags = $5 where id=$1`
 	INSERT     = `insert into expenses (title,amount,note,tags) values($1,$2,$3,$4) RETURNING id`
 )
+
+type DBInterface struct {
+	Db                                                      *sql.DB
+	TGetstmt, Getstmt, Delstmt, Poststmt, Putstmt, Liststmt *sql.Stmt
+}
 
 var (
 	TGetStmt, GetStmt, DelStmt, PostStmt, PutStmt, ListStmt *sql.Stmt

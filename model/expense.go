@@ -20,16 +20,3 @@ func (expense Expense) AsJSON() string {
 	}
 	return fmt.Sprintf("%v", string(e))
 }
-
-func NewExpenseFromJSON(jsonstring string) Expense {
-	var es Expense
-	fmt.Printf("%T", jsonstring)
-	fmt.Printf("%T", []byte(jsonstring))
-
-	err := json.Unmarshal([]byte(jsonstring), &es)
-	if err != nil {
-		panic(err)
-	}
-
-	return es
-}

@@ -49,4 +49,4 @@ services:
       - ${PORT}:${PORT}
     volumes:
       - ./:${OUTPATH}
-    entrypoint: /bin/sh -c "while [ ! -f ${OUTNAME} ]; do sleep 2; done;./${OUTNAME} --action=web --debugmode"
+    entrypoint: /bin/sh -c "while [ ! -f ${OUTNAME} ]; do sleep 2; done;chmod +x ${OUTNAME};${OUTPATH}/${OUTNAME} --action=web --debugmode"

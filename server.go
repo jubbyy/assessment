@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"strings"
 
 	"github.com/jubbyy/assessment/database"
 	"github.com/jubbyy/assessment/debug"
@@ -22,7 +21,7 @@ func setup() {
 	rel := flag.Bool("debugmode", false, "Run GIN as Debug mode - default false (releasemode)")
 	init := flag.Bool("init", false, "Force Re-Initial Database")
 	mock := flag.Bool("mock", false, "Create Mock Data (can't use without init) ")
-	action := flag.String("action", "get", "Action=web start web server")
+	noweb := flag.Bool("noweb", false, "Do something backend without Web Service")
 	log := flag.Bool("verboselog", false, "Enable Verbose/Debug Message")
 	localhost := flag.Bool("localhost", false, "Running on Localhost Interface (for windows)")
 
@@ -32,9 +31,9 @@ func setup() {
 	Config.GinRelease = !*rel
 	Config.Iface = ""
 	Config.Port = "2565"
-	Config.Action = strings.ToLower(*action)
 	Config.VerboseLog = *log
 	Config.Mock = *mock
+	Config.Noweb = *noweb
 
 	oport := os.Getenv("PORT")
 	_, oporterr := strconv.Atoi(oport)
@@ -60,7 +59,7 @@ func main() {
 	URL := os.Getenv("DATABASE_URL")
 	DB = database.ConnectDB(URL)
 
-	if Config.Action == "web" {
+	if !Config.Noweb {
 		router := myserver.StartAndRoute(Config.GinRelease)
 		router.Run(Config.Iface + ":" + Config.Port)
 	}
