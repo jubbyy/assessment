@@ -31,7 +31,8 @@ func ListExpense(c *gin.Context) {
 	}
 
 	if len(results) == 0 {
-		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "no expense records in table"})
+		e := [0]string{}
+		c.JSON(http.StatusOK, e)
 		return
 	}
 

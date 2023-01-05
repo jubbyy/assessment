@@ -15,6 +15,7 @@ import (
 	"github.com/jubbyy/assessment/database"
 	"github.com/jubbyy/assessment/myserver"
 	"github.com/jubbyy/assessment/myusers"
+	pq "github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -60,7 +61,6 @@ func TestConnectDB(t *testing.T) {
 		t.Log("Can't Create Table")
 		t.Log(err.Error())
 	}
-
 }
 
 func TestStartGinWebServer(t *testing.T) {
@@ -83,126 +83,122 @@ func TestPing(t *testing.T) {
 }
 
 func TestStoryExp01(t *testing.T) {
-	t.Log("Test Case : Story01 Create an expense")
+	t.Run("Create an expense - should return id = 1 ", func(t *testing.T) {
+		jsonRequest := `{
+			"title": "strawberry smoothie",
+			"amount": 79,
+			"note": "night market promotion discount 10 bath", 
+			"tags": ["food", "beverage"]
+		}`
+		expectResponse := `{"id":1,"title":"strawberry smoothie","amount":79,"note":"night market promotion discount 10 bath","tags":["food","beverage"]}`
+		w := httptest.NewRecorder()
 
-	jsonRequest := `{
-		"title": "strawberry smoothie",
-		"amount": 79,
-		"note": "night market promotion discount 10 bath", 
-		"tags": ["food", "beverage"]
-	}`
-	expectResponse := `{"id":1,"title":"strawberry smoothie","amount":79,"note":"night market promotion discount 10 bath","tags":["food","beverage"]}`
-	w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/expenses", bytes.NewBuffer([]byte(jsonRequest)))
+		req.SetBasicAuth(myusers.Good.Name, myusers.Good.Password)
+		r.ServeHTTP(w, req)
 
-	req, _ := http.NewRequest("POST", "/expenses", bytes.NewBuffer([]byte(jsonRequest)))
-	req.SetBasicAuth(myusers.Good.Name, myusers.Good.Password)
-	r.ServeHTTP(w, req)
+		responseData, _ := ioutil.ReadAll(w.Body)
+		assert.Equal(t, expectResponse, string(responseData))
+		assert.Equal(t, http.StatusOK, w.Code)
 
-	responseData, _ := ioutil.ReadAll(w.Body)
-	assert.Equal(t, expectResponse, string(responseData))
-	assert.Equal(t, http.StatusOK, w.Code)
+	})
 }
 
 func TestStoryExp02(t *testing.T) {
-	t.Log("Test Case : Story02 get expense :id")
+	t.Run("Get expense id=1 -SUCCESS-", func(t *testing.T) {
 
-	expectResponse := `{"id":1,"title":"strawberry smoothie","amount":79,"note":"night market promotion discount 10 bath","tags":["food","beverage"]}`
-	w := httptest.NewRecorder()
+		expectResponse := `{"id":1,"title":"strawberry smoothie","amount":79,"note":"night market promotion discount 10 bath","tags":["food","beverage"]}`
+		w := httptest.NewRecorder()
 
-	req, _ := http.NewRequest("GET", "/expenses/1", nil)
-	req.SetBasicAuth(myusers.Good.Name, myusers.Good.Password)
-	r.ServeHTTP(w, req)
+		req, _ := http.NewRequest("GET", "/expenses/1", nil)
+		req.SetBasicAuth(myusers.Good.Name, myusers.Good.Password)
+		r.ServeHTTP(w, req)
 
-	responseData, _ := ioutil.ReadAll(w.Body)
-	assert.Equal(t, expectResponse, string(responseData))
-	assert.Equal(t, http.StatusOK, w.Code)
-}
-func TestStoryExp02NotFound(t *testing.T) {
-	t.Log("Test Case : Story02 zero data expense (id not found)")
+		responseData, _ := ioutil.ReadAll(w.Body)
+		assert.Equal(t, expectResponse, string(responseData))
+		assert.Equal(t, http.StatusOK, w.Code)
 
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/expenses/0", nil)
-	req.SetBasicAuth(myusers.Good.Name, myusers.Good.Password)
-	r.ServeHTTP(w, req)
+	})
+	t.Run("Get expense id 0 -404 NOT FOUND-", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/expenses/0", nil)
+		req.SetBasicAuth(myusers.Good.Name, myusers.Good.Password)
+		r.ServeHTTP(w, req)
 
-	assert.Equal(t, http.StatusNotFound, w.Code)
+		assert.Equal(t, http.StatusNotFound, w.Code)
+
+	})
 }
 func TestStoryExp03(t *testing.T) {
-	t.Log("Test Case : Story03 update expense")
 	jsonRequest := `{
 		"title": "apple smoothie",
 		"amount": 89,
 		"note": "no discount", 
 		"tags": ["beverage"]
 	}`
-	expectResponse := `{"id":1,"title":"apple smoothie","amount":89,"note":"no discount","tags":["beverage"]}`
-	w := httptest.NewRecorder()
+	t.Run("Update expense id=1 -SUCCESS-", func(t *testing.T) {
 
-	req, _ := http.NewRequest("PUT", "/expenses/1", bytes.NewBuffer([]byte(jsonRequest)))
-	req.SetBasicAuth(myusers.Good.Name, myusers.Good.Password)
-	r.ServeHTTP(w, req)
+		expectResponse := `{"id":1,"title":"apple smoothie","amount":89,"note":"no discount","tags":["beverage"]}`
+		w := httptest.NewRecorder()
 
-	responseData, _ := ioutil.ReadAll(w.Body)
-	assert.Equal(t, expectResponse, string(responseData))
-	assert.Equal(t, http.StatusOK, w.Code)
-}
-func TestStoryExp03NotFound(t *testing.T) {
-	t.Log("Test Case : Story03 update wrong expense (id not found)")
+		req, _ := http.NewRequest("PUT", "/expenses/1", bytes.NewBuffer([]byte(jsonRequest)))
+		req.SetBasicAuth(myusers.Good.Name, myusers.Good.Password)
+		r.ServeHTTP(w, req)
 
-	jsonRequest := `{
-		"title": "apple smoothie",
-		"amount": 89,
-		"note": "no discount", 
-		"tags": ["beverage"]
-	}`
-	w := httptest.NewRecorder()
+		responseData, _ := ioutil.ReadAll(w.Body)
+		assert.Equal(t, expectResponse, string(responseData))
+		assert.Equal(t, http.StatusOK, w.Code)
 
-	req, _ := http.NewRequest("PUT", "/expenses/0", bytes.NewBuffer([]byte(jsonRequest)))
-	req.SetBasicAuth(myusers.Good.Name, myusers.Good.Password)
-	r.ServeHTTP(w, req)
+	})
+	t.Run("Update to id=0 -404 NOT FOUND-", func(t *testing.T) {
+		w := httptest.NewRecorder()
 
-	assert.Equal(t, http.StatusNotFound, w.Code)
+		req, _ := http.NewRequest("PUT", "/expenses/0", bytes.NewBuffer([]byte(jsonRequest)))
+		req.SetBasicAuth(myusers.Good.Name, myusers.Good.Password)
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
+
+	})
+
 }
 
 func TestStoryExp04(t *testing.T) {
-	t.Log("Test Case : Story04 List Expenses")
-
-	jsonR1 := `{
-		"title": "apple smoothie",
-		"amount": 89,
-		"note": "no discount",
-		"tags": ["beverage"]
-	}`
-	jsonR2 := `{
-		"title": "iPhone 14 Pro Max 1TB",
-		"amount": 66900,
-		"note": "birthday gift from my love", 
-		"tags": ["gadget"]
-	}`
-	expectResponse := `[{"id":1,"title":"apple smoothie","amount":89,"note":"no discount","tags":["beverage"]},{"id":2,"title":"iPhone 14 Pro Max 1TB","amount":66900,"note":"birthday gift from my love","tags":["gadget"]}]`
-
 	t.Log("Dropping old DATA for testing Exp04")
 	DB.Exec(database.DROP_TABLE)
 	DB.Exec(database.CREATE_TABLE)
 
-	w := httptest.NewRecorder()
-	wt := httptest.NewRecorder()
+	t.Run("0 Records list 200OK but empty array -NO DATA-", func(t *testing.T) {
+		w := httptest.NewRecorder()
 
-	t.Log("Mocking 2 records")
-	req, _ := http.NewRequest("POST", "/expenses", bytes.NewBuffer([]byte(jsonR1)))
-	req.SetBasicAuth(myusers.Good.Name, myusers.Good.Password)
-	r.ServeHTTP(wt, req)
-	req, _ = http.NewRequest("POST", "/expenses", bytes.NewBuffer([]byte(jsonR2)))
-	req.SetBasicAuth(myusers.Good.Name, myusers.Good.Password)
-	r.ServeHTTP(wt, req)
+		req, _ := http.NewRequest("GET", "/expenses", nil)
+		req.SetBasicAuth(myusers.Good.Name, myusers.Good.Password)
+		r.ServeHTTP(w, req)
 
-	req, _ = http.NewRequest("GET", "/expenses", nil)
-	req.SetBasicAuth(myusers.Good.Name, myusers.Good.Password)
-	r.ServeHTTP(w, req)
+		responseData, _ := ioutil.ReadAll(w.Body)
+		assert.Equal(t, "[]", string(responseData))
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+	InsStmt, _ := DB.Prepare(database.INSERT)
 
-	responseData, _ := ioutil.ReadAll(w.Body)
-	assert.Equal(t, expectResponse, string(responseData))
-	assert.Equal(t, http.StatusOK, w.Code)
+	t.Log("Prepare 2 records")
+	tags := []string{"beverage"}
+	InsStmt.Exec("apple smoothie", 89, "no discount", pq.Array(&tags))
+	tags = []string{"gadget"}
+	InsStmt.Exec("iPhone 14 Pro Max 1TB", 66900, "birthday gift from my love", pq.Array(&tags))
+
+	t.Run("List Expenses - 2 Records Return -SUCCESS-", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		expectResponse := `[{"id":1,"title":"apple smoothie","amount":89,"note":"no discount","tags":["beverage"]},{"id":2,"title":"iPhone 14 Pro Max 1TB","amount":66900,"note":"birthday gift from my love","tags":["gadget"]}]`
+		req, _ := http.NewRequest("GET", "/expenses", nil)
+		req.SetBasicAuth(myusers.Good.Name, myusers.Good.Password)
+		r.ServeHTTP(w, req)
+
+		responseData, _ := ioutil.ReadAll(w.Body)
+		assert.Equal(t, expectResponse, string(responseData))
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
 }
 
 func TestBadAuthentication(t *testing.T) {
@@ -213,7 +209,6 @@ func TestBadAuthentication(t *testing.T) {
 	req.SetBasicAuth(myusers.Bad.Name, myusers.Bad.Password)
 	r.ServeHTTP(w, req)
 
-	if status := w.Code; status != http.StatusUnauthorized {
-		t.Errorf("Must ask for password - return statuscode %v", status)
-	}
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+
 }
