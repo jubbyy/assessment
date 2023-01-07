@@ -5,7 +5,10 @@ package main
 import (
 	"bytes"
 	//	"fmt"
+	"database/sql"
+	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -21,41 +24,48 @@ import (
 
 var r *gin.Engine
 
-/*func init() {
-	URL := os.Getenv("DATABASE_URL")
-	if os.Getenv("TESTDATABASE_URL") != "" {
-		fmt.Println("Connecting to Database .... TESTDATBASE_URL ")
-		URL = os.Getenv("TESTDATABSE_URL")
-	} else {
-		fmt.Println("!!WARNING!!.. Testing Database Connection..to Prodcution DATBASE_URL ")
+/*
+	func init() {
+		URL := os.Getenv("DATABASE_URL")
+		if os.Getenv("TESTDATABASE_URL") != "" {
+			fmt.Println("Connecting to Database .... TESTDATBASE_URL ")
+			URL = os.Getenv("TESTDATABSE_URL")
+		} else {
+			fmt.Println("!!WARNING!!.. Testing Database Connection..to Prodcution DATBASE_URL ")
+		}
+		fmt.Println("Connecting to %s", URL)
+		fmt.Println("!!WARNING!! Deleting all DATA")
+		DB = database.ConnectDB(URL)
+		DB.Exec(database.DROP_TABLE)
+		DB.Exec(database.CREATE_TABLE)
 	}
-	fmt.Println("Connecting to %s", URL)
-	fmt.Println("!!WARNING!! Deleting all DATA")
-	DB = database.ConnectDB(URL)
-	DB.Exec(database.DROP_TABLE)
-	DB.Exec(database.CREATE_TABLE)
-}*/
+*/
+var db *sql.DB
+var sg *database.StatementGroup
 
 func TestConnectDB(t *testing.T) {
 	//func SetupDatabase(t *testing.T) {
+
+	log.Println("Spinning up...... ")
+
 	URL := os.Getenv("TESTDATABASE_URL")
 	if URL == "" {
 		t.Log("WARNING!!.. Testing Database Connection.... DATBASE_URL ")
-		os.Getenv("DATABASE_URL")
+		URL = os.Getenv("DATABASE_URL")
 	} else {
 		t.Log("Connecting to Database .... TESTDATBASE_URL ")
 	}
 	t.Log("Connecting to : " + URL)
-	DB = database.ConnectDB(URL)
+	db, sg = database.DBControl(URL)
 
 	t.Log("Droping Table and Create a new one")
-	res, err := DB.Exec(database.DROP_TABLE)
+	res, err := sg.DropStmt.Exec()
 	_ = res
 	if err != nil {
 		t.Log("Can't Drop Table")
 		t.Log(err.Error())
 	}
-	res, err = DB.Exec(database.CREATE_TABLE)
+	res, err = sg.CreateStmt.Exec()
 	_ = res
 	if err != nil {
 		t.Log("Can't Create Table")
@@ -63,10 +73,14 @@ func TestConnectDB(t *testing.T) {
 	}
 }
 
+func CloseDB(db io.Closer) {
+	db.Close()
+}
+
 func TestStartGinWebServer(t *testing.T) {
 	t.Log("Starting Gin Web Server")
 	GinRelease := true
-	r = myserver.StartAndRoute(GinRelease)
+	r = myserver.RouteSetup(GinRelease, sg)
 }
 
 func TestPing(t *testing.T) {
@@ -165,8 +179,8 @@ func TestStoryExp03(t *testing.T) {
 
 func TestStoryExp04(t *testing.T) {
 	t.Log("Dropping old DATA for testing Exp04")
-	DB.Exec(database.DROP_TABLE)
-	DB.Exec(database.CREATE_TABLE)
+	sg.DropStmt.Exec()
+	sg.CreateStmt.Exec()
 
 	t.Run("0 Records list 200OK but empty array -NO DATA-", func(t *testing.T) {
 		w := httptest.NewRecorder()
@@ -179,13 +193,13 @@ func TestStoryExp04(t *testing.T) {
 		assert.Equal(t, "[]", string(responseData))
 		assert.Equal(t, http.StatusOK, w.Code)
 	})
-	InsStmt, _ := DB.Prepare(database.INSERT)
+	//	InsStmt, _ := DB.Prepare(database.INSERT)
 
 	t.Log("Prepare 2 records")
 	tags := []string{"beverage"}
-	InsStmt.Exec("apple smoothie", 89, "no discount", pq.Array(&tags))
+	sg.PostStmt.Exec("apple smoothie", 89, "no discount", pq.Array(&tags))
 	tags = []string{"gadget"}
-	InsStmt.Exec("iPhone 14 Pro Max 1TB", 66900, "birthday gift from my love", pq.Array(&tags))
+	sg.PostStmt.Exec("iPhone 14 Pro Max 1TB", 66900, "birthday gift from my love", pq.Array(&tags))
 
 	t.Run("List Expenses - 2 Records Return -SUCCESS-", func(t *testing.T) {
 		w := httptest.NewRecorder()
@@ -203,6 +217,8 @@ func TestStoryExp04(t *testing.T) {
 
 func TestBadAuthentication(t *testing.T) {
 	t.Log("Test Case : Bad username")
+	defer CloseDB(db)
+
 	w := httptest.NewRecorder()
 
 	req, _ := http.NewRequest("GET", "/expenses", nil)

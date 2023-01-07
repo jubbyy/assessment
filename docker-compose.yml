@@ -6,17 +6,16 @@ services:
     image: postgres
     restart: always
     volumes:
-      - ./database/0-initdb.sh:/docker-entrypoint-initdb.d/0-initdb.sh
-      - ./database/99-initdb.sql:/docker-entrypoint-initdb.d/99-initdb.sql
-        #      - ./initdb.sh:/usr/local/bin/docker-entrypoint.sh/99-initdb.sh
+      - ./pgdb/0-initdb.sh:/docker-entrypoint-initdb.d/0-initdb.sh
+      - ./pgdb/99-initdb.sql:/docker-entrypoint-initdb.d/99-initdb.sql
     environment:
-       POSTGRES_PASSWORD: ${POSTGRES_CNT_PASSWORD}
-       DBNAME: ${DBNAME}
-       DBTABLE: ${DBTABLE}
-       DBUSER: ${DBUSER}
-       DBPASS: ${DBPASS}
-         #    ports:
-         #  - 5432:5432
+      POSTGRES_PASSWORD: ${POSTGRES_CNT_PASSWORD}
+      DBNAME: ${DBNAME}
+      DBTABLE: ${DBTABLE}
+      DBUSER: ${DBUSER}
+      DBPASS: ${DBPASS}
+    ports:
+      - 5432:5432
 
   adminer:
     image: adminer
@@ -34,19 +33,20 @@ services:
     working_dir: ${OUTPATH}
     environment:
       GOOS: linux
+      GOARCH: amd64
     entrypoint: sh -c "rm ${OUTNAME};go build -o ${OUTNAME}"
 
   gorun:
     image: amd64/alpine
     restart: always
     depends_on:
-      - gobuilder
+      - db
     environment:
       PORT: ${PORT}
-      DATABASE_URL: postgres://${DBUSER}:${DBPASS}@db:5432/${DBNAME}
+      DATABASE_URL: "postgres://${DBUSER}:${DBPASS}@db:5432/${DBNAME}"
     working_dir: ${OUTPATH}
     ports:
       - ${PORT}:${PORT}
     volumes:
       - ./:${OUTPATH}
-    entrypoint: /bin/sh -c "while [ ! -f ${OUTNAME} ]; do sleep 2; done;chmod +x ${OUTNAME};${OUTPATH}/${OUTNAME} --action=web --debugmode"
+    entrypoint: /bin/sh -c "while [ ! -f ${OUTNAME} ]; do sleep 2; done;sleep 7;chmod +x ${OUTNAME};${OUTPATH}/${OUTNAME} --debugmode"

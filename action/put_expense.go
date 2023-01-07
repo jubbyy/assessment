@@ -39,3 +39,30 @@ func PutExpense(c *gin.Context) {
 	c.JSON(http.StatusOK, e)
 
 }
+
+func UpdateExpense(c *gin.Context, sg *database.StatementGroup) {
+	var e model.Expense
+	if err := c.ShouldBindJSON(&e); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid data (action.UpdateExpense)"})
+		return
+	}
+
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		id = 0
+	}
+
+	res, er := sg.PutStmt.Exec(id, e.Title, e.Amount, e.Note, pq.Array(&e.Tags))
+	if er != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Update error in action.UpdateExpense"})
+	}
+	rows, _ := res.RowsAffected()
+	if rows == 0 {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "id : " + c.Param("id") + " not found."})
+		return
+	}
+
+	e.Id = id
+	c.JSON(http.StatusOK, e)
+
+}

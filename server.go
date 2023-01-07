@@ -1,11 +1,17 @@
 package main
 
 import (
-	"database/sql"
+	"context"
 	"flag"
 	"fmt"
+	"io"
+	"log"
+	"net/http"
 	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
+	"time"
 
 	"github.com/jubbyy/assessment/database"
 	"github.com/jubbyy/assessment/debug"
@@ -15,7 +21,6 @@ import (
 )
 
 var Config model.Configuration
-var DB *sql.DB
 
 func setup() {
 	rel := flag.Bool("debugmode", false, "Run GIN as Debug mode - default false (releasemode)")
@@ -23,7 +28,7 @@ func setup() {
 	mock := flag.Bool("mock", false, "Create Mock Data (can't use without init) ")
 	noweb := flag.Bool("noweb", false, "Do something backend without Web Service")
 	log := flag.Bool("verboselog", false, "Enable Verbose/Debug Message")
-	localhost := flag.Bool("localhost", false, "Running on Localhost Interface (for windows)")
+	localhost := flag.Bool("localhost", false, "Running only on Localhost Interface ")
 
 	flag.Parse()
 
@@ -54,25 +59,59 @@ func setup() {
 
 func main() {
 
+	var srv *http.Server
+	log.Println("Spinning up...... ")
 	setup()
 
 	URL := os.Getenv("DATABASE_URL")
-	DB = database.ConnectDB(URL)
+	log.Println(URL)
+	db, sg := database.DBControl(URL)
+	sg.CreateStmt.Exec()
+
+	defer CloseDB(db)
 
 	if !Config.Noweb {
-		router := myserver.StartAndRoute(Config.GinRelease)
-		router.Run(Config.Iface + ":" + Config.Port)
-	}
 
+		router := myserver.RouteSetup(Config.GinRelease, sg)
+		srv = &http.Server{
+			Addr:    Config.Iface + ":" + Config.Port,
+			Handler: router,
+		}
+
+		go func() {
+			log.Println("Listening on " + Config.Iface + ":" + Config.Port)
+
+			if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				log.Fatalf("listen: %s\n", err)
+			}
+		}()
+
+	}
 	if Config.Init {
 		debug.D("Initialising....")
-		if DB == nil {
+		if db == nil {
 			panic("lost databaes ?")
 		}
-		DB.Exec(database.DROP_TABLE)
-		DB.Exec(database.CREATE_TABLE)
+		sg.DropStmt.Exec()
+		sg.CreateStmt.Exec()
+
 		if Config.Mock {
 			database.MockData(10)
 		}
 	}
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt)
+	signal.Notify(stop, syscall.SIGTERM)
+	<-stop
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatal("Server Shutdown:", err)
+	}
+	log.Println("Shutting down.....")
+}
+
+func CloseDB(db io.Closer) {
+	db.Close()
 }

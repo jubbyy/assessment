@@ -2,10 +2,13 @@ package database
 
 import (
 	"database/sql"
+	"fmt"
 	"math/rand"
+	"net/http"
 	"strconv"
 
 	"github.com/jubbyy/assessment/debug"
+	"github.com/jubbyy/assessment/model"
 	"github.com/lib/pq"
 )
 
@@ -26,34 +29,92 @@ var (
 	INSERT     = `insert into expenses (title,amount,note,tags) values($1,$2,$3,$4) RETURNING id`
 )
 
-type DBInterface struct {
-	Db                                                      *sql.DB
-	TGetstmt, Getstmt, Delstmt, Poststmt, Putstmt, Liststmt *sql.Stmt
+type DatabaseHandler struct {
+	Db                                                                              *sql.DB
+	DropStmt, CreateStmt, OneGetStmt, GetStmt, DelStmt, PostStmt, PutStmt, ListStmt *sql.Stmt
+	Message                                                                         string
+	Errcode                                                                         int
+}
+type StatementGroup struct {
+	DropStmt, CreateStmt, OneGetStmt, GetStmt, DelStmt, PostStmt, PutStmt, ListStmt *sql.Stmt
 }
 
 var (
-	TGetStmt, GetStmt, DelStmt, PostStmt, PutStmt, ListStmt *sql.Stmt
+	TGetStmt, DelStmt, PostStmt, PutStmt, ListStmt *sql.Stmt
 )
 
-func ConnectDB(URL string) *sql.DB {
-
+func (dh *DatabaseHandler) ConnectDB(URL string) {
+	var err error
 	debug.D("Openning DB Connection...")
+	//	dh.Db, _ = sql.Open("postgres", URL)
 	db, err := sql.Open("postgres", URL)
 	if err != nil {
 		panic(err.Error())
 	}
-	db.Exec(CREATE_TABLE)
+	fmt.Println(URL)
 
 	debug.D("Database Connected and Table is ready.")
-	GetStmt, _ = db.Prepare(SELECT_ID)
-	DelStmt, _ = db.Prepare(DELETE_ID)
-	PostStmt, _ = db.Prepare(INSERT)
-	PutStmt, _ = db.Prepare(UPDATE_ID)
-	ListStmt, _ = db.Prepare(SELECT)
-	TGetStmt, _ = db.Prepare(TSELECT_ID)
-	return db
+	dh.CreateStmt, _ = db.Prepare(CREATE_TABLE)
+	dh.DropStmt, _ = db.Prepare(DROP_TABLE)
+	dh.GetStmt, _ = db.Prepare(SELECT_ID)
+	dh.DelStmt, _ = dh.Db.Prepare(DELETE_ID)
+	dh.PostStmt, _ = dh.Db.Prepare(INSERT)
+	dh.PutStmt, _ = dh.Db.Prepare(UPDATE_ID)
+	dh.ListStmt, _ = dh.Db.Prepare(SELECT)
+	dh.OneGetStmt, _ = dh.Db.Prepare(TSELECT_ID)
+	dh.Message = "Ready"
+	dh.Errcode = 208
+
+	_, er := dh.CreateStmt.Exec()
+	if er != nil {
+		panic(er.Error())
+	}
+}
+func DBConnect(URL string) (db *sql.DB) {
+	db, err := sql.Open("postgres", URL)
+	if err != nil {
+		panic(err.Error())
+	}
+	return
 }
 
+func DBControl(URL string) (*sql.DB, *StatementGroup) {
+	db, err := sql.Open("postgres", URL)
+
+	if err != nil {
+		panic(err.Error())
+	}
+	var stmt *sql.Stmt
+	p := func(q string) *sql.Stmt {
+		stmt, _ = db.Prepare(q)
+		return stmt
+	}
+	if err != nil {
+		panic(err.Error())
+	}
+	return db, &StatementGroup{
+		DropStmt:   p(DROP_TABLE),
+		CreateStmt: p(CREATE_TABLE),
+		OneGetStmt: p(TSELECT_ID),
+		GetStmt:    p(SELECT_ID),
+		DelStmt:    p(DELETE_ID),
+		PostStmt:   p(INSERT),
+		PutStmt:    p(UPDATE_ID),
+		ListStmt:   p(SELECT),
+	}
+}
+
+func (dh *DatabaseHandler) Create(e model.Expense) (code int, eout model.Expense) {
+	eout = e
+	//	return dh.Errcode, eout
+	err := dh.PostStmt.QueryRow(e.Title, e.Amount, e.Note, pq.Array(&e.Tags)).Scan(&eout.Id)
+
+	if err != nil {
+		return http.StatusBadRequest, e
+	}
+
+	return http.StatusOK, eout
+}
 func MockData(max int) {
 	var cnum int
 	var title, note string

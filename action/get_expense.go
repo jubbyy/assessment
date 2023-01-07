@@ -26,3 +26,19 @@ func GetExpense(c *gin.Context) {
 
 	c.JSON(http.StatusOK, e)
 }
+
+func GetAnExpense(c *gin.Context, sg *database.StatementGroup) {
+	var e model.Expense
+	id, er := strconv.Atoi(c.Param("id"))
+	if er != nil {
+		id = 0
+	}
+	err := sg.OneGetStmt.QueryRow(id).Scan(&e.Title, &e.Amount, &e.Note, pq.Array(&e.Tags))
+
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"message": "expense id : " + c.Param("id") + " not Found"})
+		return
+	}
+	e.Id = id
+	c.JSON(http.StatusOK, e)
+}
