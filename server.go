@@ -66,8 +66,6 @@ func main() {
 	URL := os.Getenv("DATABASE_URL")
 	log.Println(URL)
 	db, sg := database.DBControl(URL)
-	sg.CreateStmt.Exec()
-
 	defer CloseDB(db)
 
 	if !Config.Noweb {

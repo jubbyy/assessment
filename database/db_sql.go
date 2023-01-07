@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"math/rand"
 	"net/http"
 	"strconv"
@@ -91,6 +92,12 @@ func DBControl(URL string) (*sql.DB, *StatementGroup) {
 	}
 	if err != nil {
 		panic(err.Error())
+	}
+
+	res, er := db.Exec(CREATE_TABLE)
+	_ = res
+	if er != nil {
+		log.Println(er.Error())
 	}
 	return db, &StatementGroup{
 		DropStmt:   p(DROP_TABLE),
